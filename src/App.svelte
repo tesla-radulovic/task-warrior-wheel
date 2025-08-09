@@ -1,16 +1,18 @@
 <!-- App.svelte -->
 <script lang="ts">
   import TimeWheel from './components/TimeWheel.svelte';
+  import { v4 as uuidv4 } from 'uuid';
 
   type AgendaItem = {
     s_time: number,
     e_time: number,
     color: string,
+    uuid: string,
   }
 
   let agenda_items: AgendaItem[] = [
-    { s_time: 4, e_time: 6, color: 'blue' },
-    { s_time: 8, e_time: 10, color: 'green' }
+    { s_time: 4, e_time: 6, color: 'blue', uuid: 'item-1' },
+    { s_time: 8, e_time: 10, color: 'green', uuid: 'item-2' }
   ];
 
   // Handle changes from the TimeWheel component
@@ -23,7 +25,7 @@
   function addNewItem() {
     agenda_items = [
       ...agenda_items,
-      { s_time: 12, e_time: 14, color: 'red' }
+      { s_time: 12, e_time: 14, color: 'red', uuid: uuidv4() }
     ];
   }
 
@@ -56,7 +58,8 @@
     <ul>
       {#each agenda_items as item, index}
         <li>
-          Item {index + 1}: {item.s_time}-{item.e_time} ({item.color})
+          Item {index + 1}: {item.s_time}-{item.e_time} ({item.color}) 
+          - UUID: {item.uuid}
         </li>
       {/each}
     </ul>

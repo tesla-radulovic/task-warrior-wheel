@@ -12,9 +12,11 @@
     s_time: number,
     e_time: number,
     color: string,
+    uuid: string,
   }
 
   let canvas: HTMLCanvasElement;
+  let resizeObserver: ResizeObserver;
 
   function peg_to_rad(offset: number) {
     return (i: number) => ((i / (12.0 * 4.0)) * (2 * Math.PI)) - Math.PI / 2 + offset
@@ -33,7 +35,7 @@
     const radius = size / 2.4
     const width = radius * 2.4;
     const height = radius * 2.4;
-    console.log(agendaItems)
+    // console.log(agendaItems)
     for (let agendaItem of agendaItems) {
       let { s_time, e_time, color } = agendaItem
       let [s_theta, e_theta] = [s_time, e_time].map(peg_to_rad(offset))
@@ -105,6 +107,8 @@
       // Get the display size of the canvas
       const dpr = window.devicePixelRatio || 1; // Handle high-DPI displays
 
+      console.log("canvas resized!")
+
       canvas.width = canvas.offsetWidth * dpr;
       canvas.height = canvas.offsetHeight * dpr;
 
@@ -117,11 +121,19 @@
         const size = Math.min(canvas.offsetWidth, canvas.offsetHeight);
         drawWheelBase(start, offset, size, ctx);
         drawAgendaItems(agendaItems, start, offset, size, ctx);
+      } else {
+        console.log ("no ctx")
       }
     };
 
     // Initial resize
     resizeCanvas();
+
+    // Observe canvas size changes (not just window resizes)
+    resizeObserver = new ResizeObserver(() => {
+      resizeCanvas();
+    });
+    resizeObserver.observe(canvas);
 
     canvas.addEventListener('contextmenu', function (event) {
       event.preventDefault();
@@ -174,7 +186,10 @@
 
     // Handle window resize
     window.addEventListener('resize', resizeCanvas);
-    return () => window.removeEventListener('resize', resizeCanvas);
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      if (resizeObserver) resizeObserver.disconnect();
+    };
   });
 
   // Watch for changes in agendaItems and redraw
