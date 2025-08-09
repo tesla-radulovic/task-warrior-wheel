@@ -11,28 +11,76 @@
   }
 
   let agenda_items: AgendaItem[] = [
-    { s_time: 4, e_time: 6, color: 'blue', uuid: 'item-1' },
-    { s_time: 8, e_time: 10, color: 'green', uuid: 'item-2' }
+    { s_time: 4, e_time: 6, color: 'blue', uuid: uuidv4() },
+    { s_time: 8, e_time: 10, color: 'green', uuid: uuidv4() }
   ];
+
+  const TASK_NAME_CHOICES: string[] = [
+    'Deep Work',
+    'Email Triage',
+    'Standup Meeting',
+    'Code Review',
+    'Design Session',
+    'Focus Time',
+    'Planning',
+    'Research',
+    'Write Docs',
+    'Test & QA'
+  ];
+
+  function getRandomTaskName(): string {
+    const index = Math.floor(Math.random() * TASK_NAME_CHOICES.length);
+    return TASK_NAME_CHOICES[index];
+  }
+
+  let taskNames: Record<string, string> = {};
+
+  // Initialize names for the initial agenda items
+  for (const item of agenda_items) {
+    taskNames[item.uuid] = getRandomTaskName();
+  }
 
   // Handle changes from the TimeWheel component
   function handleAgendaItemsChanged(event: CustomEvent) {
-    agenda_items = event.detail.agendaItems;
+    const updatedItems: AgendaItem[] = event.detail.agendaItems;
+    const updatedUuidSet = new Set(updatedItems.map((item) => item.uuid));
+
+    // Remove names for items that no longer exist
+    for (const uuid of Object.keys(taskNames)) {
+      if (!updatedUuidSet.has(uuid)) {
+        delete taskNames[uuid];
+      }
+    }
+
+    // Assign names for any new items missing a name
+    for (const item of updatedItems) {
+      if (!taskNames[item.uuid]) {
+        taskNames[item.uuid] = getRandomTaskName();
+      }
+    }
+
+    agenda_items = updatedItems;
     console.log('Agenda items updated from wheel:', agenda_items);
   }
 
   // Example: Add a new agenda item from the main app
   function addNewItem() {
+    const newItem: AgendaItem = { s_time: 12, e_time: 14, color: 'red', uuid: uuidv4() };
     agenda_items = [
       ...agenda_items,
-      { s_time: 12, e_time: 14, color: 'red', uuid: uuidv4() }
+      newItem
     ];
+    taskNames[newItem.uuid] = getRandomTaskName();
   }
 
   // Example: Remove the first agenda item
   function removeFirstItem() {
     if (agenda_items.length > 0) {
-      agenda_items = agenda_items.slice(1);
+      const [removed, ...rest] = agenda_items;
+      agenda_items = rest;
+      if (removed) {
+        delete taskNames[removed.uuid];
+      }
     }
   }
 
@@ -58,8 +106,8 @@
     <ul>
       {#each agenda_items as item, index}
         <li>
-          Item {index + 1}: {item.s_time}-{item.e_time} ({item.color}) 
-          - UUID: {item.uuid}
+          <span class="color-swatch" style="background-color: {item.color};"></span>
+          {taskNames[item.uuid] || ('Task ' + (index + 1))}: {item.s_time}-{item.e_time}
         </li>
       {/each}
     </ul>
@@ -73,3 +121,15 @@
     />
   </div>
 </div>
+
+<style>
+  .color-swatch {
+    display: inline-block;
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 2px;
+    margin-right: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    vertical-align: middle;
+  }
+</style>
