@@ -4,8 +4,10 @@ from tasklib import TaskWarrior
 import json
 import os
 from datetime import datetime
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 DATA_FILE = 'task_data.json'
 
 def serialize_task(task):
@@ -22,8 +24,9 @@ def serialize_task(task):
 
 @app.route('/most_urgent', methods=['GET', 'POST'])
 def get_most_urgent():
-    if request.json and 'excluded' in request.json:
-        excluded = set(request.json['excluded'])
+    data = request.get_json(silent=True) or {}
+    if 'excluded' in data:
+        excluded = set(data['excluded'])
     else:
         excluded_str = request.args.get('excluded', '')
         excluded = set(excluded_str.split(',')) if excluded_str else set()
@@ -40,8 +43,9 @@ def get_most_urgent():
 
 @app.route('/random', methods=['GET', 'POST'])
 def get_random():
-    if request.json and 'excluded' in request.json:
-        excluded = set(request.json['excluded'])
+    data = request.get_json(silent=True) or {}
+    if 'excluded' in data:
+        excluded = set(data['excluded'])
     else:
         excluded_str = request.args.get('excluded', '')
         excluded = set(excluded_str.split(',')) if excluded_str else set()
@@ -54,11 +58,12 @@ def get_random():
         return jsonify({'uuid': None})
 
     random_task = random.choice(filtered_tasks)
+    # print(random_task)
     return jsonify({'uuid': random_task['uuid']})
 
 @app.route('/dict', methods=['POST'])
 def write_dict():
-    data = request.json  # Expects {uuid: [int1, int2], ...}
+    data = request.get_json(force=True)  # Expects {uuid: [int1, int2], ...}
     with open(DATA_FILE, 'w') as f:
         json.dump(data, f)
     return jsonify({'status': 'ok'})
@@ -74,10 +79,8 @@ def get_dict():
 
 @app.route('/task', methods=['GET', 'POST'])
 def get_task():
-    if request.json and 'uuid' in request.json:
-        uuid = request.json['uuid']
-    else:
-        uuid = request.args.get('uuid')
+    data = request.get_json(silent=True) or {}
+    uuid = data.get('uuid') or request.args.get('uuid')
 
     if not uuid:
         return jsonify({'error': 'Missing uuid parameter'}), 400
@@ -85,6 +88,7 @@ def get_task():
     tw = TaskWarrior()
     try:
         task = tw.tasks.get(uuid=uuid)
+        print(task)
         return jsonify(serialize_task(task))
     except Exception as e:
         return jsonify({'error': f'Task not found: {str(e)}'}), 404

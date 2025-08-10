@@ -35,6 +35,8 @@
 
   let taskNames: Record<string, string> = {};
 
+  const API_BASE: string = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:5000';
+
   // Initialize names for the initial agenda items
   for (const item of agenda_items) {
     taskNames[item.uuid] = getRandomTaskName();
@@ -80,6 +82,39 @@
     taskNames[newItem.uuid] = getRandomTaskName();
   }
 
+  async function addRandomTask() {
+    try {
+      const randomResponse = await fetch(`${API_BASE}/random`);
+      const randomData: { uuid: string | null } = await randomResponse.json();
+      if (!randomData.uuid) {
+        console.warn('No random task available from server');
+        return;
+      }
+
+      const taskResponse = await fetch(`${API_BASE}/task?uuid=${encodeURIComponent(randomData.uuid)}`);
+      const taskData: any = await taskResponse.json();
+      console.log('Task data:', taskData);
+      const taskName: string = taskData?.description || taskData?.name || 'Task';
+
+      const DEFAULT_DURATION = 2;
+      const lastEnd = agenda_items.length > 0
+        ? Math.max(...agenda_items.map((item) => item.e_time))
+        : 0;
+      const startTime = lastEnd;
+      const endTime = startTime + DEFAULT_DURATION;
+
+      const localUuid = uuidv4();
+      const newItem: AgendaItem = { s_time: startTime, e_time: endTime, color: 'red', uuid: localUuid };
+      agenda_items = [
+        ...agenda_items,
+        newItem
+      ];
+      taskNames[localUuid] = taskName;
+    } catch (error) {
+      console.error('Failed to add random task', error);
+    }
+  }
+
   // Example: Remove the first agenda item
   function removeFirstItem() {
     if (agenda_items.length > 0) {
@@ -99,6 +134,7 @@
     <h3>Agenda Controls</h3>
     <p>Current items: {agenda_items.length}</p>
     <button on:click={addNewItem}>Add Task After Last</button>
+    <button on:click={addRandomTask}>Add Random Task</button>
     <button on:click={removeFirstItem}>Remove First Item</button>
     
     <h4>Current Agenda Items:</h4>
