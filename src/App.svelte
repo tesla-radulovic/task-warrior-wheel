@@ -65,7 +65,14 @@
 
   // Example: Add a new agenda item from the main app
   function addNewItem() {
-    const newItem: AgendaItem = { s_time: 12, e_time: 14, color: 'red', uuid: uuidv4() };
+    const DEFAULT_DURATION = 2;
+    const lastEnd = agenda_items.length > 0
+      ? Math.max(...agenda_items.map((item) => item.e_time))
+      : 0;
+    const startTime = lastEnd;
+    const endTime = startTime + DEFAULT_DURATION;
+
+    const newItem: AgendaItem = { s_time: startTime, e_time: endTime, color: 'red', uuid: uuidv4() };
     agenda_items = [
       ...agenda_items,
       newItem
@@ -84,23 +91,15 @@
     }
   }
 
-  // Example: Modify the first item's color
-  function changeFirstItemColor() {
-    if (agenda_items.length > 0) {
-      agenda_items = agenda_items.map((item, index) => 
-        index === 0 ? { ...item, color: 'purple' } : item
-      );
-    }
-  }
+  
 </script>
 
 <div class="container">
   <div class="left">
     <h3>Agenda Controls</h3>
     <p>Current items: {agenda_items.length}</p>
-    <button on:click={addNewItem}>Add Red Item (12-14)</button>
+    <button on:click={addNewItem}>Add Task After Last</button>
     <button on:click={removeFirstItem}>Remove First Item</button>
-    <button on:click={changeFirstItemColor}>Change First Item to Purple</button>
     
     <h4>Current Agenda Items:</h4>
     <ul>
