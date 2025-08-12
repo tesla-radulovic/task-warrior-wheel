@@ -12,6 +12,7 @@ DATA_FILE = 'task_data.json'
 
 def serialize_task(task):
     d = dict(task)
+    print (d)
     date_fields = ['entry', 'start', 'end', 'due', 'until', 'scheduled', 'wait', 'modified']
     for field in date_fields:
         if field in d and d[field] is not None:
@@ -58,7 +59,7 @@ def get_random():
         return jsonify({'uuid': None})
 
     random_task = random.choice(filtered_tasks)
-    # print(random_task)
+    print(random_task)
     return jsonify({'uuid': random_task['uuid']})
 
 @app.route('/dict', methods=['POST'])
@@ -86,12 +87,13 @@ def get_task():
         return jsonify({'error': 'Missing uuid parameter'}), 400
 
     tw = TaskWarrior()
-    try:
-        task = tw.tasks.get(uuid=uuid)
-        print(task)
-        return jsonify(serialize_task(task))
-    except Exception as e:
-        return jsonify({'error': f'Task not found: {str(e)}'}), 404
+    task = tw.tasks.get(uuid=uuid)
+    print (task)
+    return jsonify({'description': task['description'], 'uuid': uuid})
+    # try:
+    #     
+    # except Exception as e:
+    #     return jsonify({'error': f'Task not found: {str(e)}'}), 404
 
 if __name__ == '__main__':
     app.run(debug=True)
